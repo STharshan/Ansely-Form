@@ -197,7 +197,7 @@ const ServiceInquiryForm = () => {
                                 <label className="block text-gray-300 font-medium mb-1">Upload Video</label>
                                 <input type="file" name="video" accept="video/*" onChange={handleFileChange} className="w-full border border-gray-700 rounded-md p-2 bg-gray-800 text-white" />
                             </div>
-                            <TextAreaField label="Legal Pages" name="textContent" onChange={handleChange} placeholder="Privacy Policy, Terms, etc." />
+                            <TextAreaField label="Legal Pages" name="legalPages" onChange={handleChange} placeholder="Privacy Policy, Terms, etc." />
                         </>
                     )}
 
