@@ -2,10 +2,10 @@
 
 import React, { useState } from 'react'
 import { ArrowRight, ArrowLeft, CheckCircle } from 'lucide-react'
+import axios from 'axios'
 import emailjs from '@emailjs/browser'
 import toast, { Toaster } from 'react-hot-toast'
 
-// Step titles
 const steps = [
     'Client Information',
     'Project Scope & Requirements',
@@ -18,6 +18,7 @@ const steps = [
 const ServiceInquiryForm = () => {
     const [step, setStep] = useState(1)
     const [formData, setFormData] = useState({})
+    const [files, setFiles] = useState({ image: null, video: null })
     const [loading, setLoading] = useState(false)
 
     // Handle input changes
@@ -25,42 +26,67 @@ const ServiceInquiryForm = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value })
     }
 
-    // Navigation
+    // Handle file input
+    const handleFileChange = (e) => {
+        const { name, files: selectedFiles } = e.target
+        setFiles((prev) => ({ ...prev, [name]: selectedFiles[0] }))
+    }
+
     const nextStep = () => setStep((prev) => prev + 1)
     const prevStep = () => setStep((prev) => prev - 1)
 
-    // Form submit
-    const handleSubmit = (e) => {
+    // Upload to Cloudinary
+    const uploadFile = async (file) => {
+        if (!file) return ''
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('upload_preset', 'ANSELY') // Cloudinary unsigned preset
+        const res = await axios.post('https://api.cloudinary.com/v1_1/dg0lp2tmc/upload', formData)
+        return res.data.secure_url
+    }
+
+    const handleSubmit = async (e) => {
         e.preventDefault()
         if (step < steps.length) {
             nextStep()
-        } else {
-            setLoading(true)
-            emailjs
-                .send(
-                    'service_404lxe7', // Replace with your service ID
-                    'template_k27qfsp', // Replace with your template ID
-                    formData,
-                    'tmUgtXKf_TwGrV1iE' // Replace with your public key
-                )
-                .then(
-                    () => {
-                        toast.success('Form submitted successfully!')
-                        setFormData({})
-                        setStep(1)
-                    },
-                    (error) => {
-                        toast.error('Something went wrong, please try again.')
-                    }
-                )
-                .finally(() => setLoading(false))
+            return
+        }
+
+        setLoading(true)
+        try {
+            // Upload files first
+            const imageUrl = await uploadFile(files.image)
+            const videoUrl = await uploadFile(files.video)
+
+            // Prepare template parameters
+            const templateParams = {
+                ...formData,
+                image: imageUrl,
+                video: videoUrl,
+            }
+
+            await emailjs.send(
+                'service_404lxe7',     // Your service ID
+                'template_k27qfsp',    // Your template ID
+                templateParams,
+                'tmUgtXKf_TwGrV1iE'    // Your public key
+            )
+
+            toast.success('Form submitted successfully!')
+            setFormData({})
+            setFiles({ image: null, video: null })
+            setStep(1)
+        } catch (err) {
+            console.error(err)
+            toast.error('Something went wrong, please try again.')
+        } finally {
+            setLoading(false)
         }
     }
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-950 px-4 text-white">
-            {/* Toaster for notifications */}
-            <Toaster position="top-right" reverseOrder={false} />
+            <Toaster position="top-right" />
 
             <main className="w-full max-w-4xl px-4 sm:px-6 md:px-8 py-10 sm:py-16">
                 {/* Title */}
@@ -85,18 +111,18 @@ const ServiceInquiryForm = () => {
                                 type="button"
                                 onClick={() => setStep(idx + 1)}
                                 className={`flex flex-col sm:flex-row items-center justify-center gap-2 p-4 rounded-lg transition-all duration-300 text-center ${isActive
-                                        ? 'bg-orange-500/10 border border-orange-500 text-orange-400'
-                                        : isCompleted
-                                            ? 'bg-green-500/10 border border-green-500 text-green-400'
-                                            : 'bg-gray-900 border border-gray-800 text-gray-400 hover:bg-gray-800/70 hover:text-orange-400'
+                                    ? 'bg-orange-500/10 border border-orange-500 text-orange-400'
+                                    : isCompleted
+                                        ? 'bg-green-500/10 border border-green-500 text-green-400'
+                                        : 'bg-gray-900 border border-gray-800 text-gray-400 hover:bg-gray-800/70 hover:text-orange-400'
                                     }`}
                             >
                                 <div
                                     className={`w-8 h-8 flex items-center justify-center rounded-full border text-sm font-medium ${isActive
-                                            ? 'border-orange-400 text-orange-400'
-                                            : isCompleted
-                                                ? 'border-green-400 text-green-400'
-                                                : 'border-gray-600 text-gray-400'
+                                        ? 'border-orange-400 text-orange-400'
+                                        : isCompleted
+                                            ? 'border-green-400 text-green-400'
+                                            : 'border-gray-600 text-gray-400'
                                         }`}
                                 >
                                     {isCompleted ? <CheckCircle size={18} /> : idx + 1}
@@ -112,7 +138,7 @@ const ServiceInquiryForm = () => {
                     onSubmit={handleSubmit}
                     className="bg-gray-900 border border-gray-800 rounded-2xl p-6 sm:p-10 md:p-12 shadow-lg space-y-6 transition-all duration-300"
                 >
-                    {/* Step 1: Client Info */}
+                    {/* Step 1 */}
                     {step === 1 && (
                         <>
                             <InputField label="Business Name *" name="businessName" required onChange={handleChange} placeholder="Your Business Name" />
@@ -124,7 +150,7 @@ const ServiceInquiryForm = () => {
                         </>
                     )}
 
-                    {/* Step 2: Project Scope */}
+                    {/* Step 2 */}
                     {step === 2 && (
                         <>
                             <SelectField label="Type of Website *" name="websiteType" required onChange={handleChange}>
@@ -148,7 +174,7 @@ const ServiceInquiryForm = () => {
                         </>
                     )}
 
-                    {/* Step 3: Design Preferences */}
+                    {/* Step 3 */}
                     {step === 3 && (
                         <>
                             <InputField label="Design Style" name="designStyle" onChange={handleChange} placeholder="Modern, minimal, bold, professional..." />
@@ -159,15 +185,23 @@ const ServiceInquiryForm = () => {
                         </>
                     )}
 
-                    {/* Step 4: Content */}
+                    {/* Step 4 */}
                     {step === 4 && (
                         <>
                             <TextAreaField label="Text Content for Each Page" name="textContent" onChange={handleChange} placeholder="Who will provide the text content?" />
-                            <TextAreaField label="Legal Pages" name="legalPages" onChange={handleChange} placeholder="Privacy Policy, Terms, etc." />
+                            <div>
+                                <label className="block text-gray-300 font-medium mb-1">Upload Image</label>
+                                <input type="file" name="image" accept="image/*" onChange={handleFileChange} className="w-full border border-gray-700 rounded-md p-2 bg-gray-800 text-white" />
+                            </div>
+                            <div>
+                                <label className="block text-gray-300 font-medium mb-1">Upload Video</label>
+                                <input type="file" name="video" accept="video/*" onChange={handleFileChange} className="w-full border border-gray-700 rounded-md p-2 bg-gray-800 text-white" />
+                            </div>
+                            <TextAreaField label="Legal Pages" name="textContent" onChange={handleChange} placeholder="Privacy Policy, Terms, etc." />
                         </>
                     )}
 
-                    {/* Step 5: SEO & Tracking */}
+                    {/* Step 5 */}
                     {step === 5 && (
                         <>
                             <TextAreaField label="Keywords / SEO Goals" name="seoGoals" onChange={handleChange} placeholder="Important keywords or goals" />
@@ -176,7 +210,7 @@ const ServiceInquiryForm = () => {
                         </>
                     )}
 
-                    {/* Step 6: Timeline & Deadlines */}
+                    {/* Step 6 */}
                     {step === 6 && (
                         <>
                             <InputField label="Project Start Date" name="startDate" type="date" onChange={handleChange} />
@@ -185,46 +219,29 @@ const ServiceInquiryForm = () => {
                         </>
                     )}
 
-                    {/* Navigation Buttons */}
+                    {/* Navigation */}
                     <div className="flex justify-between mt-8">
                         {step > 1 && (
-                            <button
-                                type="button"
-                                onClick={prevStep}
-                                className="group flex items-center px-5 py-2.5 rounded-md border border-gray-700 text-white hover:bg-gray-800 transition-all"
-                            >
-                                <ArrowLeft
-                                    className="h-4 w-4 mr-2 transition-transform duration-300 group-hover:-translate-x-1"
-                                />
-                                <span className="transition-transform duration-300 group-hover:translate-x-1">
+                            <button type="button" onClick={prevStep} className="group  cursor-pointer flex items-center px-5 py-2.5 rounded-md border border-gray-700 text-white hover:bg-gray-800 transition-all">
+                                <ArrowLeft className="h-4 w-4 mr-2 transition-transform duration-300 group-hover:-translate-x-1 group-active:-translate-x-1" />
+                                <span className="transition-transform duration-300 group-hover:translate-x-1 group-active:-translate-x-1">
                                     Back
                                 </span>
                             </button>
-
                         )}
                         <button
                             type="submit"
                             disabled={loading}
-                            className={`group flex items-center justify-center px-6 py-2.5 rounded-md bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-600 hover:to-orange-500 text-white font-medium shadow-md transition-all ${loading ? 'opacity-70 cursor-not-allowed' : ''
-                                }`}
+                            className={`group flex items-center justify-center px-6 py-2.5 rounded-md bg-gradient-to-r from-orange-500 to-orange-400 hover:from-orange-600 hover:to-orange-500 text-white font-medium shadow-md transition-all duration-300 ${loading ? 'opacity-70 cursor-not-allowed' : 'transform transition-transform duration-300 group-hover:-translate-x-1 group-active:-translate-x-1'}`}
                         >
-                            <span
-                                className={`transition-transform duration-300 ${!loading ? 'group-hover:-translate-x-1' : ''
-                                    }`}
-                            >
-                                {loading ? 'Submitting...' : step === steps.length ? 'Submit' : 'Next'}
-                            </span>
-                            {!loading && (
-                                <ArrowRight
-                                    className="h-4 w-4 ml-2 transition-transform duration-300 group-hover:translate-x-1"
-                                />
-                            )}
+                            {loading ? 'Submitting...' : step === steps.length ? 'Submit' : 'Next'}
+                            {!loading && <ArrowRight className="h-4 w-4 ml-2 mt-0.5 cursor-pointer group-hover:translate-x-1 duration-300" />}
                         </button>
 
                     </div>
                 </form>
             </main>
-        </div>
+        </div >
     )
 }
 
@@ -232,39 +249,21 @@ const ServiceInquiryForm = () => {
 const InputField = ({ label, name, type = 'text', required, placeholder, onChange }) => (
     <div>
         <label className="block text-sm font-medium text-gray-300 mb-2">{label}</label>
-        <input
-            type={type}
-            name={name}
-            required={required}
-            placeholder={placeholder}
-            onChange={onChange}
-            className="w-full bg-gray-800 border border-gray-700 text-white rounded-md px-3 py-2 focus:ring-2 focus:ring-orange-500"
-        />
+        <input type={type} name={name} required={required} placeholder={placeholder} onChange={onChange} className="w-full bg-gray-800 border border-gray-700 text-white rounded-md px-3 py-2 focus:ring-2 focus:ring-orange-500" />
     </div>
 )
 
 const TextAreaField = ({ label, name, placeholder, onChange }) => (
     <div>
         <label className="block text-sm font-medium text-gray-300 mb-2">{label}</label>
-        <textarea
-            name={name}
-            placeholder={placeholder}
-            rows="3"
-            onChange={onChange}
-            className="w-full bg-gray-800 border border-gray-700 text-white rounded-md px-3 py-2 focus:ring-2 focus:ring-orange-500"
-        />
+        <textarea name={name} placeholder={placeholder} rows="3" onChange={onChange} className="w-full bg-gray-800 border border-gray-700 text-white rounded-md px-3 py-2 focus:ring-2 focus:ring-orange-500" />
     </div>
 )
 
 const SelectField = ({ label, name, required, onChange, children }) => (
     <div>
         <label className="block text-sm font-medium text-gray-300 mb-2">{label}</label>
-        <select
-            name={name}
-            required={required}
-            onChange={onChange}
-            className="w-full bg-gray-800 border border-gray-700 text-white rounded-md px-3 py-2 focus:ring-2 focus:ring-orange-500"
-        >
+        <select name={name} required={required} onChange={onChange} className="w-full bg-gray-800 border border-gray-700 text-white rounded-md px-3 py-2 focus:ring-2 focus:ring-orange-500">
             {children}
         </select>
     </div>
