@@ -239,17 +239,15 @@ const ServiceInquiryForm = () => {
                         </button>
                     </div>
                 </form>
-                    {/* Terms & Privacy */}
-                    <div className="mt-6 text-center text-gray-400 text-sm">
-                        By submitting this form, you agree to our{' '}
-                        <a href="/terms-conditions" target="_blank" rel="noopener noreferrer" className="text-orange-400 hover:underline">
-                            Terms & Conditions
-                        </a>{' '}
-                        and{' '}
-                        <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-orange-400 hover:underline">
-                            Privacy Policy
-                        </a>.
-                    </div>
+                {/* Terms & Privacy */}
+                <div className="mt-6 text-center text-gray-400 text-sm flex justify-center space-x-6">
+                    <a href="/terms-conditions" target="_blank" rel="noopener noreferrer" className="text-orange-400 hover:underline">
+                        Terms & Conditions
+                    </a>
+                    <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-orange-400 hover:underline">
+                        Privacy Policy
+                    </a>
+                </div>
             </main>
         </div >
     )
