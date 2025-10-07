@@ -237,9 +237,19 @@ const ServiceInquiryForm = () => {
                             {loading ? 'Submitting...' : step === steps.length ? 'Submit' : 'Next'}
                             {!loading && <ArrowRight className="h-4 w-4 ml-2 mt-0.5 cursor-pointer group-hover:translate-x-1 duration-300" />}
                         </button>
-
                     </div>
                 </form>
+                    {/* Terms & Privacy */}
+                    <div className="mt-6 text-center text-gray-400 text-sm">
+                        By submitting this form, you agree to our{' '}
+                        <a href="/terms-conditions" target="_blank" rel="noopener noreferrer" className="text-orange-400 hover:underline">
+                            Terms & Conditions
+                        </a>{' '}
+                        and{' '}
+                        <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-orange-400 hover:underline">
+                            Privacy Policy
+                        </a>.
+                    </div>
             </main>
         </div >
     )
